@@ -1,64 +1,8 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse
+import os
 
 app = FastAPI()
-
-html = """
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>WebSocket Demo</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    </head>
-    <body>
-        <div class="container mt-3">
-            <h1>FastAPI WebSocket Chat</h1>
-            <h2>Your Name : <span id="username-display"></span></h2>
-            <form id="username-form" action="" onsubmit="startChat(event)">
-                <input type="text" class="form-control" id="usernameInput" placeholder="Enter your name" required autocomplete="off"/>
-                <button class="btn btn-outline-primary mt-2">Start Chat</button>
-            </form>
-            <div id="chat-container" style="display:none;">
-                <form action="" onsubmit="sendMessage(event)">
-                    <input type="text" class="form-control" id="messageText" autocomplete="off"/>
-                    <button class="btn btn-outline-primary mt-2">Send</button>
-                </form>
-                <ul id='messages' class="mt-5"></ul>
-            </div>
-        </div>
-    
-        <script>
-            var ws;
-            function startChat(event) {
-                var username = document.getElementById("usernameInput").value;
-                document.querySelector("#username-display").textContent = username;
-
-                // ซ่อนฟอร์มกรอกชื่อและแสดงส่วนแชท
-                document.getElementById("username-form").style.display = "none";
-                document.getElementById("chat-container").style.display = "block";
-
-                // เปิดการเชื่อมต่อ WebSocket
-                ws = new WebSocket(`ws://localhost:8000/ws/${username}`);
-                ws.onmessage = function(event) {
-                    var messages = document.getElementById('messages');
-                    var message = document.createElement('li');
-                    var content = document.createTextNode(event.data);
-                    message.appendChild(content);
-                    messages.appendChild(message);
-                };
-                event.preventDefault();
-            }
-
-            function sendMessage(event) {
-                var input = document.getElementById("messageText");
-                ws.send(input.value);
-                input.value = '';
-                event.preventDefault();
-            }
-        </script>
-    </body>
-</html>
-"""
 
 class ConnectionManager:
     def __init__(self):
@@ -79,14 +23,11 @@ class ConnectionManager:
             if connection != sender:  
                 await connection.send_text(message)
 
-    
 manager = ConnectionManager()
-
 
 @app.get("/")
 async def get():
-    return HTMLResponse(html)
-
+    return FileResponse('index.html')
 
 @app.websocket("/ws/{username}")
 async def websocket_endpoint(websocket: WebSocket, username: str):
@@ -99,6 +40,3 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
     except WebSocketDisconnect:
         manager.disconnect(websocket)
         await manager.broadcast(f"{username} has left the chat")
-
-
-
