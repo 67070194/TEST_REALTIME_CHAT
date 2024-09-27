@@ -3,7 +3,13 @@ from fastapi.responses import FileResponse
 
 app = FastAPI()
 
-rooms = {}
+rooms = {
+    'Room1': None,
+    'Room2': None,
+    'Room3': None,
+    'Room4': None,
+    'Room5': None,
+}
 
 class ConnectionManager:
     def __init__(self):
@@ -34,11 +40,16 @@ async def get():
 
 @app.get("/chat/{room_name}")
 async def get_chat(room_name: str):
+    if room_name not in rooms:
+        return {"error": "Room does not exist"}
     return FileResponse('templates/chat.html')
 
 @app.websocket("/ws/{room_name}/{username}")
 async def websocket_endpoint(websocket: WebSocket, room_name: str, username: str):
     if room_name not in rooms:
+        return
+
+    if rooms[room_name] is None:
         rooms[room_name] = ConnectionManager()
 
     manager = rooms[room_name]

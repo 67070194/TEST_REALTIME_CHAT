@@ -14,10 +14,6 @@
 
             <div id="chat-rooms" style="display:none;">
                 <h2>Welcome, <span id="username-display"></span></h2>
-                <form id="create-room-form" onsubmit="createRoom(event)">
-                    <input type="text" class="form-control" id="roomNameInput" placeholder="Create a room" required autocomplete="off"/>
-                    <button class="btn btn-outline-primary mt-2">Create Room</button>
-                </form>
                 <div id="rooms-list" class="mt-4"></div>
             </div>
         </div>
@@ -34,26 +30,17 @@
                 loadAvailableRooms();
             }
 
-            function createRoom(event) {
-                event.preventDefault();
-                var roomName = document.getElementById("roomNameInput").value;
-                window.location.href = `/chat/${roomName}?username=${username}`;
-            }
-
             function loadAvailableRooms() {
-                fetch('/rooms')
-                    .then(response => response.json())
-                    .then(rooms => {
-                        var roomsList = document.getElementById('rooms-list');
-                        roomsList.innerHTML = "<h3>Available Rooms:</h3>";
-                        rooms.forEach(room => {
-                            var roomLink = document.createElement('a');
-                            roomLink.href = `/chat/${room}?username=${username}`;
-                            roomLink.textContent = room;
-                            roomLink.classList.add("btn", "btn-outline-secondary", "mt-2");
-                            roomsList.appendChild(roomLink);
-                        });
-                    });
+                var predefinedRooms = ['Room1', 'Room2', 'Room3', 'Room4', 'Room5'];
+                var roomsList = document.getElementById('rooms-list');
+                roomsList.innerHTML = "<h3>Available Rooms:</h3>";
+                predefinedRooms.forEach(room => {
+                    var roomLink = document.createElement('a');
+                    roomLink.href = `/chat/${room}?username=${username}`;
+                    roomLink.textContent = room;
+                    roomLink.classList.add("btn", "btn-outline-secondary", "mt-2");
+                    roomsList.appendChild(roomLink);
+                });
             }
         </script>
     </body>
