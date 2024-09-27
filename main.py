@@ -4,11 +4,11 @@ from fastapi.responses import FileResponse
 app = FastAPI()
 
 rooms = {
-    'Room1': None,
-    'Room2': None,
-    'Room3': None,
-    'Room4': None,
-    'Room5': None,
+    'R1': None,
+    'R2': None,
+    'R3': None,
+    'R4': None,
+    'R5': None,
 }
 
 class ConnectionManager:
@@ -27,7 +27,7 @@ class ConnectionManager:
     
     async def broadcast(self, message: str, sender: WebSocket):
         for connection in self.active_connections:
-            if connection != sender:  
+            if connection != sender:
                 await connection.send_text(message)
 
 @app.get("/rooms")
@@ -54,6 +54,7 @@ async def websocket_endpoint(websocket: WebSocket, room_name: str, username: str
 
     manager = rooms[room_name]
     await manager.connect(websocket)
+    await manager.send_personal_message("You have joined the room.", websocket)
     await manager.broadcast(f"{username} joined the chat", websocket)
 
     try:
