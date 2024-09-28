@@ -1,8 +1,15 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
-import os
 
 app = FastAPI()
+
+rooms = {
+    'R1': None,
+    'R2': None,
+    'R3': None,
+    'R4': None,
+    'R5': None,
+}
 
 class ConnectionManager:
     def __init__(self):
@@ -20,23 +27,40 @@ class ConnectionManager:
     
     async def broadcast(self, message: str, sender: WebSocket):
         for connection in self.active_connections:
-            if connection != sender:  
+            if connection != sender:
                 await connection.send_text(message)
 
-manager = ConnectionManager()
+@app.get("/rooms")
+async def get_rooms():
+    return list(rooms.keys())
 
 @app.get("/")
 async def get():
-    return FileResponse('index.html')
+    return FileResponse('templates/index.html')
 
-@app.websocket("/ws/{username}")
-async def websocket_endpoint(websocket: WebSocket, username: str):
+@app.get("/chat/{room_name}")
+async def get_chat(room_name: str):
+    if room_name not in rooms:
+        return {"error": "Room does not exist"}
+    return FileResponse('templates/chat.html')
+
+@app.websocket("/ws/{room_name}/{username}")
+async def websocket_endpoint(websocket: WebSocket, room_name: str, username: str):
+    if room_name not in rooms:
+        return
+
+    if rooms[room_name] is None:
+        rooms[room_name] = ConnectionManager()
+
+    manager = rooms[room_name]
     await manager.connect(websocket)
-    try: 
+    await manager.send_personal_message("You have joined the room.", websocket)
+    await manager.broadcast(f"{username} joined the chat", websocket)
+
+    try:
         while True:
             data = await websocket.receive_text()
-            await manager.send_personal_message(f"You wrote: {data}", websocket)
-            await manager.broadcast(f"{username} says: {data}", websocket)
+            await manager.broadcast(f"{username}: {data}", websocket)
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-        await manager.broadcast(f"{username} has left the chat")
+        await manager.broadcast(f"{username} left the chat", websocket)
